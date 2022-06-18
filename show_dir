@@ -1,0 +1,75 @@
+#!/usr/bin/python3
+
+import os
+import sys
+from subprocess import check_output, Popen, PIPE
+
+def format_dirs(dirs:str) -> list:
+    dirs = dirs.split("\\n")
+    dirs[0] = dirs[0][2:]
+    dirs = dirs[:-1]
+
+    return dirs
+
+def get_local(path:str) -> dict:
+    local_dirs = {}
+    return_dirs = {path:[]}
+    try:
+        if os.path.isdir(path):
+            os.chdir(path)
+            dirs = format_dirs(str(check_output(["ls", path])))
+        else:
+            return []
+    except Exception as e:
+        sys.exit("Exception during get_local")
+
+    for dir in dirs:
+        os.chdir(path)
+        if os.path.isfile(dir):
+            return_dirs[path].append(dir)
+        elif os.path.isdir(dir):
+            try:
+                return_dirs[path].insert(0, get_local(path + "/" + dir))
+            except Exception as e:
+                print("test", e)
+
+
+    return return_dirs
+
+def print_files(files:list, indent) -> None:
+    for file in files:
+        if isinstance(file, dict):
+            print_folder(file, indent+1)
+        elif isinstance(file, str):
+            print("|    "*indent + "|    |---> " + file)
+        else:
+            break
+
+
+def print_folder(folder:dict, indent) -> None:
+    if not isinstance(folder, dict):
+        return
+    for sub_folder, files in folder.items():
+        print("|    "*indent + "|")
+        print("|    "*indent + "|\\____" + sub_folder)
+        if isinstance(files, dict):
+            print_folder(files, indent+1)
+        elif isinstance(files, list):
+            print_files(files, indent)
+        else:
+            break
+
+
+def main():
+    current_dir = "/home/labuser"
+
+    dirs = get_local(current_dir)
+
+    print(current_dir + "/")
+
+    for key, value in dirs.items():
+        print_files(value, 0)
+
+
+if __name__ == "__main__":
+    main()
