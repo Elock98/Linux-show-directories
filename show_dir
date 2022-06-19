@@ -17,67 +17,49 @@ def format_dirs(dirs:str) -> list:
 
     return dirs
 
-def get_local(path:str) -> dict:
+def get_local(path:str, indent:int) -> None:
     """
-        Creates and returns the file tree
-        recursively as a dictionary where
-        the key is the directory and the
-        value is a list of files and dirs
-        under it.
+        Discovers and prints the file tree.
     """
-    local_dirs = {}
-    return_dirs = {path:[]}
+    local_dirs = []
     try:
         if os.path.isdir(path):
             os.chdir(path)
             dirs = format_dirs(str(check_output(["ls", path])))
         else:
-            return []
+            return
     except Exception as e:
-        sys.exit("Exception during get_local")
+        sys.exit("Exception during get_local" + e)
 
     for dir in dirs:
         os.chdir(path)
         if os.path.isfile(dir):
-            return_dirs[path].append(dir)
+            print_file(dir, indent)
         elif os.path.isdir(dir):
-            try:
-                return_dirs[path].insert(0, get_local(path + "/" + dir))
-            except Exception as e:
-                print("test", e)
+            local_dirs.append(dir)
 
-    return return_dirs
+    for dir in local_dirs:
+        print_folder(dir, indent)
+        get_local(path + "/" + dir, indent+1)
 
-def print_files(files:list, indent) -> None:
+def print_file(file:str, indent) -> None:
     """
-        Prints files to the screen in tree
+        Prints file to the screen in tree
         structured formatting.
     """
-    for file in files:
-        if isinstance(file, dict):
-            print_folder(file, indent+1)
-        elif isinstance(file, str):
-            print("|    "*indent + "|    |---> " + colored(file, "green"))
-        else:
-            break
+    if indent > 0:
+        print("|    "*(indent-1) + "|    |---> " + colored(file, "green"))
+    else:
+        print("|    "*(indent-1) + "|---> " + colored(file, "green"))
 
 
-def print_folder(folder:dict, indent) -> None:
+def print_folder(folder:str, indent) -> None:
     """
-        Prints folders to the screen in tree
+        Prints folder to the screen in tree
         structured formatting.
     """
-    if not isinstance(folder, dict):
-        return
-    for sub_folder, files in folder.items():
-        print("|    "*indent + "|")
-        print("|    "*indent + "|\\____" + colored(sub_folder, "cyan"))
-        if isinstance(files, dict):
-            print_folder(files, indent+1)
-        elif isinstance(files, list):
-            print_files(files, indent)
-        else:
-            break
+    print("|    "*indent + "|")
+    print("|    "*indent + "|\\____" + colored(folder, "cyan"))
 
 
 def setup_parser() -> OptionParser:
@@ -95,7 +77,7 @@ def setup_parser() -> OptionParser:
     return parser
 
 
-def main():
+def main() -> None:
 
     parser = setup_parser()
 
@@ -109,7 +91,7 @@ def main():
     else:
         start_dir = os.getcwd()
 
-    if start_dir.endswith("/"):
+    if start_dir.endswith("/") and len(start_dir) > 1:
         start_dir = start_dir[:-1]
 
     if not os.path.isdir(start_dir):
@@ -117,12 +99,9 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    dirs = get_local(start_dir)
-
     print(colored(start_dir + "/", "cyan"))
 
-    for key, value in dirs.items():
-        print_files(value, 0)
+    get_local(start_dir, 0)
 
 
 if __name__ == "__main__":
