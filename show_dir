@@ -75,7 +75,7 @@ def setup_parser() -> OptionParser:
         OptionParser object.
     """
     parser = OptionParser(usage="%prog [-s <file>] <start dir>",
-                          version="1.1.2",
+                          version="1.2.0",
                           description= """Displays the files and folders located under <start dir>,
                                           if no start dir is specified the working directory will be used.
                                        """
