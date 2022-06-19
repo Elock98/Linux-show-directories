@@ -7,6 +7,10 @@ from termcolor import colored
 from optparse import OptionParser
 
 def format_dirs(dirs:str) -> list:
+    """
+        Turns raw data from the 'ls' command
+        into a list of files and directories.
+    """
     dirs = dirs.split("\\n")
     dirs[0] = dirs[0][2:]
     dirs = dirs[:-1]
@@ -14,6 +18,13 @@ def format_dirs(dirs:str) -> list:
     return dirs
 
 def get_local(path:str) -> dict:
+    """
+        Creates and returns the file tree
+        recursively as a dictionary where
+        the key is the directory and the
+        value is a list of files and dirs
+        under it.
+    """
     local_dirs = {}
     return_dirs = {path:[]}
     try:
@@ -35,10 +46,13 @@ def get_local(path:str) -> dict:
             except Exception as e:
                 print("test", e)
 
-
     return return_dirs
 
 def print_files(files:list, indent) -> None:
+    """
+        Prints files to the screen in tree
+        structured formatting.
+    """
     for file in files:
         if isinstance(file, dict):
             print_folder(file, indent+1)
@@ -49,6 +63,10 @@ def print_files(files:list, indent) -> None:
 
 
 def print_folder(folder:dict, indent) -> None:
+    """
+        Prints folders to the screen in tree
+        structured formatting.
+    """
     if not isinstance(folder, dict):
         return
     for sub_folder, files in folder.items():
@@ -63,7 +81,10 @@ def print_folder(folder:dict, indent) -> None:
 
 
 def setup_parser() -> OptionParser:
-
+    """
+        Creates, sets-up and returns an
+        OptionParser object.
+    """
     parser = OptionParser(usage="%prog <start dir>",
                           description= """Displays the files and folders located under <start dir>,
                                           if no start dir is specified the working directory will be used.
