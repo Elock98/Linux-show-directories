@@ -6,6 +6,7 @@ from subprocess import check_output, Popen, PIPE
 from termcolor import colored
 from optparse import OptionParser
 
+FLAG = ""
 
 def format_dirs(dirs:str) -> list:
     """
@@ -27,7 +28,10 @@ def get_local(path:str, indent:int) -> None:
     try:
         if os.path.isdir(path):
             os.chdir(path)
-            dirs = format_dirs(str(check_output(["ls", path])))
+            if FLAG:
+                dirs = format_dirs(str(check_output(["ls", FLAG, path])))
+            else:
+                dirs = format_dirs(str(check_output(["ls", path])))
         else:
             return
     except Exception as e:
@@ -77,6 +81,13 @@ def setup_parser() -> OptionParser:
                                        """
                          )
 
+    parser.add_option("-a",
+                      action="store_true",
+                      dest="ALL_FILES",
+                      default=False,
+                      help="include hidden files"
+                     )
+
     user = os.environ.get("USER")
     if user.lower() == "root":
         user = os.environ.get("SUDO_USER")
@@ -111,6 +122,10 @@ def main() -> None:
         print(colored(f"{start_dir} is not a correct path", "red"))
         parser.print_help()
         sys.exit(1)
+
+    global FLAG
+    if opts.ALL_FILES:
+        FLAG = "-A"
 
     global stdout
     if opts.save_file is None:
