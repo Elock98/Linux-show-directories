@@ -6,6 +6,7 @@ from subprocess import check_output, Popen, PIPE
 from termcolor import colored
 from optparse import OptionParser
 
+
 def format_dirs(dirs:str) -> list:
     """
         Turns raw data from the 'ls' command
@@ -16,6 +17,7 @@ def format_dirs(dirs:str) -> list:
     dirs = dirs[:-1]
 
     return dirs
+
 
 def get_local(path:str, indent:int) -> None:
     """
@@ -42,15 +44,16 @@ def get_local(path:str, indent:int) -> None:
         print_folder(dir, indent)
         get_local(path + "/" + dir, indent+1)
 
+
 def print_file(file:str, indent) -> None:
     """
         Prints file to the screen in tree
         structured formatting.
     """
     if indent > 0:
-        print("|    "*(indent-1) + "|    |---> " + colored(file, "green"))
+        print("|    "*(indent-1) + "|    |---> " + colored(file, "green"), file = sys.stdout)
     else:
-        print("|    "*(indent-1) + "|---> " + colored(file, "green"))
+        print("|    "*(indent-1) + "|---> " + colored(file, "green"), file = sys.stdout)
 
 
 def print_folder(folder:str, indent) -> None:
@@ -58,8 +61,8 @@ def print_folder(folder:str, indent) -> None:
         Prints folder to the screen in tree
         structured formatting.
     """
-    print("|    "*indent + "|")
-    print("|    "*indent + "|\\____" + colored(folder, "cyan"))
+    print("|    "*indent + "|", file = sys.stdout)
+    print("|    "*indent + "|\\____" + colored(folder, "cyan"), file = sys.stdout)
 
 
 def setup_parser() -> OptionParser:
@@ -67,12 +70,22 @@ def setup_parser() -> OptionParser:
         Creates, sets-up and returns an
         OptionParser object.
     """
-    parser = OptionParser(usage="%prog <start dir>",
-                          version="1.0.0",
+    parser = OptionParser(usage="%prog [-s <file>] <start dir>",
+                          version="1.1.2",
                           description= """Displays the files and folders located under <start dir>,
                                           if no start dir is specified the working directory will be used.
                                        """
                          )
+
+    user = os.environ.get("USER")
+    if user.lower() == "root":
+        user = os.environ.get("SUDO_USER")
+    parser.add_option("-s",
+                      metavar="<file>",
+                      dest="save_file",
+                      default=None,
+                      help  = f"save the tree to /home/{user}/Documents/<file>."
+                     )
 
     return parser
 
@@ -99,10 +112,25 @@ def main() -> None:
         parser.print_help()
         sys.exit(1)
 
-    print(colored(start_dir + "/", "cyan"))
+    global stdout
+    if opts.save_file is None:
+        sys.stdout = sys.__stdout__
+    else:
+        user = os.environ.get("USER")
+        if user.lower() == "root":
+            user = os.environ.get("SUDO_USER")
+        sys.stdout = open(f"/home/{user}/Documents/{opts.save_file}","w")
 
+    print(colored(start_dir + "/", "cyan"), file = sys.stdout)
     get_local(start_dir, 0)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"Error: {e}.", file = sys.stderr)
+    finally:
+        if sys.stdout != sys.__stdout__:
+            sys.stdout.close()
+        sys.stdout = sys.__stdout__
