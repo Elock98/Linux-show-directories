@@ -4,6 +4,7 @@ import os
 import sys
 from subprocess import check_output, Popen, PIPE
 from termcolor import colored
+from optparse import OptionParser
 
 def format_dirs(dirs:str) -> list:
     dirs = dirs.split("\\n")
@@ -61,10 +62,40 @@ def print_folder(folder:dict, indent) -> None:
             break
 
 
-def main():
-    current_dir = "/home/labuser"
+def setup_parser() -> OptionParser:
 
-    dirs = get_local(current_dir)
+    parser = OptionParser(usage="%prog <start dir>",
+                          description= """Displays the files and folders located under <start dir>,
+                                          if no start dir is specified the working directory will be used.
+                                       """
+                         )
+
+    return parser
+
+
+def main():
+
+    parser = setup_parser()
+
+    (opts, args) = parser.parse_args()
+
+    if len(args) > 1:
+        parser.print_help()
+        sys.exit(1)
+    elif len(args) == 1:
+        start_dir = args[0]
+    else:
+        start_dir = os.getcwd()
+
+    if start_dir.endswith("/"):
+        start_dir = start_dir[:-1]
+
+    if not os.path.isdir(start_dir):
+        print(colored(f"{start_dir} is not a correct path", "red"))
+        parser.print_help()
+        sys.exit(1)
+
+    dirs = get_local(start_dir)
 
     print(colored(start_dir + "/", "cyan"))
 
